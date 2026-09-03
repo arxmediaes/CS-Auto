@@ -195,7 +195,17 @@ button{font:inherit}
   async function load(){
     setStatus(true,"SINCRONIZANDO");
     try{
-      const res=await fetch(endpoint(CONFIG.DATA_URL),{method:"GET",cache:"no-store"});
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),15000);
+      const res=await fetch(endpoint(CONFIG.DATA_URL),{
+        method:"GET",
+        mode:"cors",
+        cache:"no-store",
+        credentials:"omit",
+        headers:{"Accept":"application/json"},
+        signal:controller.signal
+      });
+      clearTimeout(timeout);
       const raw=await res.text();
       let data; try{data=JSON.parse(raw)}catch{throw new Error("El Webhook no devolvió JSON válido: "+raw.slice(0,120))}
       if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
@@ -203,7 +213,7 @@ button{font:inherit}
       render(data); setStatus(true,"EN VIVO");
     }catch(err){
       console.error(err); setStatus(false,"ERROR DE CONEXIÓN");
-      $("systemMessage").textContent=err.message+" · Revisa que el workflow esté activo y que el dominio ngrok siga siendo el actual.";
+      $("systemMessage").textContent=(err.name==="AbortError"?"Tiempo de espera agotado al contactar n8n.":err.message)+" · Verifica que ngrok esté online y que el workflow esté activo.";
       $("systemPanel").classList.add("error");
     }
   }
@@ -212,7 +222,16 @@ button{font:inherit}
     const btn=$("playBtn"), old=btn.textContent;
     btn.disabled=true; btn.textContent="ENVIANDO…";
     try{
-      const res=await fetch(endpoint(CONFIG.PLAY_URL),{method:"POST"});
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),15000);
+      const res=await fetch(endpoint(CONFIG.PLAY_URL),{
+        method:"POST",
+        mode:"cors",
+        cache:"no-store",
+        credentials:"omit",
+        signal:controller.signal
+      });
+      clearTimeout(timeout);
       const raw=await res.text();
       let data={}; try{data=JSON.parse(raw)}catch{}
       if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
@@ -221,7 +240,7 @@ button{font:inherit}
       setTimeout(load,3500);
     }catch(err){
       console.error(err);
-      $("systemMessage").textContent="No se pudo iniciar la cola: "+err.message;
+      $("systemMessage").textContent="No se pudo iniciar la cola: "+(err.name==="AbortError"?"tiempo de espera agotado":err.message);
       $("systemPanel").classList.add("error");
       btn.textContent="ERROR AL INICIAR";
     }finally{setTimeout(()=>{btn.disabled=false;btn.textContent=old},3000)}
