@@ -74,7 +74,7 @@ button{font:inherit}
   <div class="brand"><div class="logo">CS</div><div><h1>CALMA SUAVE</h1><p>YouTube Automation · Control Room</p></div></div>
   <div class="actions">
     <div class="live"><i class="dot off" id="statusDot"></i><span id="statusText">CONECTANDO</span></div>
-    <button class="btn" id="refreshBtn">↻ Actualizar</button>
+    <button type="button" class="btn" id="refreshBtn" onclick="window.calmaSuaveRefresh()">↻ Actualizar</button>
     <button class="btn primary" id="playBtn">▶ Llenar cola</button>
   </div>
 </header>
@@ -195,11 +195,12 @@ button{font:inherit}
 
   async function load(){
     setStatus(true,"SINCRONIZANDO");
+    $("refreshBtn").disabled=true;
     try{
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),15000);
-      const url=endpoint(CONFIG.DATA_URL);
-      const res=await fetch(url,{method:"GET",cache:"no-store",headers:{"Accept":"application/json"},signal:controller.signal});
+      const url=endpoint(CONFIG.DATA_URL)+"&t="+Date.now();
+      const res=await window.fetch(url,{method:"GET",cache:"no-store",mode:"cors",signal:controller.signal});
       clearTimeout(timeout);
       const raw=await res.text();
       let data; try{data=JSON.parse(raw)}catch{throw new Error("El Webhook no devolvió JSON válido: "+raw.slice(0,120))}
@@ -211,6 +212,8 @@ button{font:inherit}
       const detalle=err.name==="AbortError"?"El webhook tardó más de 15 s en responder.":err.message;
       $("systemMessage").textContent=detalle+" · URL: "+CONFIG.DATA_URL;
       $("systemPanel").classList.add("error");
+    } finally {
+      $("refreshBtn").disabled=false;
     }
   }
 
@@ -233,7 +236,8 @@ button{font:inherit}
     }finally{setTimeout(()=>{btn.disabled=false;btn.textContent=old},3000)}
   }
 
-  $("refreshBtn").addEventListener("click",load);
+  window.calmaSuaveRefresh=()=>{ void load(); };
+  $("refreshBtn").addEventListener("click",()=>window.calmaSuaveRefresh());
   $("playBtn").addEventListener("click",fillQueue);
   load();
   setInterval(load,CONFIG.REFRESH_MS);
