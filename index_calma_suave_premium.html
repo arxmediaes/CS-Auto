@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calma Suave · Panel de Control</title>
+<style>
+:root{
+  --bg:#07070a;
+  --surface:#101116;
+  --surface-2:#14151b;
+  --surface-3:#191a21;
+  --line:rgba(255,255,255,.075);
+  --line-strong:rgba(255,255,255,.12);
+  --text:#f5f5f7;
+  --muted:#8d9099;
+  --soft:#b7bac3;
+  --accent:#c8a46a;
+  --accent-soft:rgba(200,164,106,.14);
+  --green:#77d7a1;
+  --yellow:#e5bd70;
+  --red:#e17c88;
+  --shadow:0 24px 70px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;min-height:100vh;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(900px 500px at 50% -160px,rgba(200,164,106,.10),transparent 65%),
+    linear-gradient(180deg,#09090c 0%,#07070a 100%);
+  padding:34px 28px 70px;
+  letter-spacing:-.01em;
+}
+.wrap{max-width:1180px;margin:0 auto}
+header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:28px;margin-bottom:34px;padding-bottom:26px;
+  border-bottom:1px solid var(--line)
+}
+header>div:first-child{display:flex;flex-direction:column;gap:8px}
+h1{
+  font-size:15px;font-weight:650;letter-spacing:.02em;
+  margin:0;color:var(--text);
+}
+h1:first-letter{filter:grayscale(1)}
+.sub{
+  color:var(--muted);font-size:13px;margin:0;
+  letter-spacing:.005em
+}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+button{
+  cursor:pointer;border:1px solid var(--line-strong);
+  border-radius:10px;padding:11px 16px;font-size:13px;
+  font-weight:600;display:flex;align-items:center;gap:8px;
+  transition:all .18s ease;background:rgba(255,255,255,.035);
+  color:var(--text)
+}
+button:hover{
+  background:rgba(255,255,255,.065);
+  border-color:rgba(255,255,255,.18);
+  transform:translateY(-1px)
+}
+button:active{transform:translateY(0)}
+#btnPlay{
+  background:var(--accent);color:#111;border-color:var(--accent);
+  box-shadow:0 8px 24px rgba(200,164,106,.16)
+}
+#btnPlay:hover{background:#d5b57d;border-color:#d5b57d;box-shadow:0 10px 30px rgba(200,164,106,.22)}
+#btnPlay:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+#btnRefresh{color:var(--soft)}
+
+.grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;margin-bottom:26px;
+  background:var(--line);border:1px solid var(--line);
+  border-radius:15px;overflow:hidden;box-shadow:var(--shadow)
+}
+.stat{
+  min-height:128px;background:linear-gradient(145deg,#121318,#0f1014);
+  border:none;border-radius:0;padding:22px 22px;
+  display:flex;flex-direction:column;justify-content:space-between
+}
+.stat .label{
+  color:var(--muted);font-size:10px;text-transform:uppercase;
+  letter-spacing:.12em;font-weight:600
+}
+.stat .value{
+  font-size:30px;line-height:1;font-weight:650;
+  letter-spacing:-.045em;margin-top:16px;color:var(--text)
+}
+.stat.ok,.stat.warn,.stat.bad{border:none}
+.stat.ok .value{color:var(--green)}
+.stat.warn .value{color:var(--yellow)}
+.stat.bad .value{color:var(--red)}
+
+.panel{
+  background:linear-gradient(145deg,#111217,#0d0e12);
+  border:1px solid var(--line);border-radius:15px;
+  padding:23px 24px;margin-bottom:16px;
+  box-shadow:0 16px 45px rgba(0,0,0,.18)
+}
+.panel h2{
+  margin:0 0 18px;font-size:12px;font-weight:650;
+  text-transform:uppercase;letter-spacing:.11em;
+  color:var(--soft);display:flex;align-items:center;gap:8px
+}
+.panel h2::first-letter{filter:grayscale(1)}
+.row{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:20px;padding:16px 2px;
+  border-bottom:1px solid var(--line)
+}
+.row:last-child{border-bottom:none}
+.row>div:first-child>div:first-child{font-size:14px;color:#ececf0}
+.row .meta{color:var(--muted);font-size:11px;margin-top:5px}
+.badge{
+  font-size:10px;padding:5px 9px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);
+  border:1px solid rgba(200,164,106,.18);
+  white-space:nowrap;text-transform:uppercase;letter-spacing:.07em
+}
+a.link{color:var(--accent);text-decoration:none;font-size:12px;font-weight:600}
+a.link:hover{text-decoration:none;color:#e0c38e}
+.empty{color:#676a73;font-size:12px;padding:12px 0}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#18191e;border:1px solid var(--line-strong);
+  color:var(--text);padding:12px 18px;border-radius:10px;
+  font-size:13px;box-shadow:0 18px 50px rgba(0,0,0,.45);
+  opacity:0;pointer-events:none;transition:opacity .25s ease,bottom .25s ease
+}
+.toast.show{opacity:1;bottom:34px}
+.bar{height:5px;border-radius:999px;background:#24252b;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;background:var(--accent)}
+.chip-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.chip{
+  background:#17181e;border:1px solid var(--line);
+  border-radius:999px;padding:7px 11px;font-size:11px;color:#888b94
+}
+.chip b{color:#eee;font-weight:650}
+footer{text-align:center;color:#5f626b;font-size:10px;margin-top:28px}
+.spin{
+  width:13px;height:13px;border-radius:50%;
+  border:2px solid rgba(0,0,0,.2);border-top-color:#111;
+  animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:800px){
+  body{padding:22px 16px 50px}
+  header{align-items:flex-start;flex-direction:column}
+  .actions{width:100%}
+  button{flex:1;justify-content:center}
+  .grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:520px){
+  .grid{grid-template-columns:1fr}
+  .stat{min-height:105px}
+  .row{align-items:flex-start;flex-direction:column;gap:10px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Calma Suave</h1>
+      <div class="sub">Control de publicación · YouTube</div>
+    </div>
+    <div class="actions">
+      <button id="btnRefresh">🔄 Actualizar</button>
+      <button id="btnPlay">▶ Programar videos nuevos</button>
+    </div>
+  </header>
+
+  <div class="grid" id="stats"></div>
+
+  <div class="panel">
+    <h2>📅 Próximos días</h2>
+    <div id="cola"></div>
+  </div>
+
+  <div class="panel">
+    <h2>✅ Últimos publicados</h2>
+    <div id="ultimos"></div>
+  </div>
+
+  <div class="panel">
+    <h2>🎧 Biblioteca por tipo de sonido</h2>
+    <div class="chip-row" id="tipos"></div>
+  </div>
+
+  <footer>Última actualización: <span id="ultimaActualizacion">—</span></footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN — edita estas dos líneas con tus datos
+// ============================================================
+const N8N_BASE_URL = 'https://caroyln-squeakier-syreeta.ngrok-free.dev'; // sin barra al final
+const TOKEN = 'calma-suave-2026'; // debe coincidir con TOKEN_ESPERADO en los nodos "Verificar Token" del workflow
+
+const URL_DATA = `${N8N_BASE_URL}/webhook/calma-suave-data?token=${encodeURIComponent(TOKEN)}`;
+const URL_PLAY = `${N8N_BASE_URL}/webhook/calma-suave-play?token=${encodeURIComponent(TOKEN)}`;
+
+const $ = (sel) => document.querySelector(sel);
+const statsEl = $('#stats'), colaEl = $('#cola'), ultimosEl = $('#ultimos'), tiposEl = $('#tipos');
+const btnPlay = $('#btnPlay'), btnRefresh = $('#btnRefresh'), toastEl = $('#toast');
+
+function toast(msg, ms = 3500) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+
+function statCard(label, value, cls) {
+  return `<div class="stat ${cls || ''}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+}
+
+async function cargarDatos() {
+  try {
+    const resp = await fetch(URL_DATA);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const d = await resp.json();
+    render(d);
+    $('#ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-CL');
+  } catch (e) {
+    toast('No se pudo conectar con n8n: ' + e.message, 5000);
+  }
+}
+
+function render(d) {
+  const estadoClase = d.estadoColchon === 'ok' ? 'ok' : (d.estadoColchon === 'bajo' ? 'warn' : 'bad');
+  const estadoTexto = d.estadoColchon === 'ok' ? 'Saludable' : (d.estadoColchon === 'bajo' ? 'Bajo' : 'Vacío');
+
+  statsEl.innerHTML = [
+    statCard('Videos en Drive', d.totalVideosEnDrive),
+    statCard('Publicados hasta ahora', d.totalPublicados),
+    statCard('Disponibles para programar', d.videosDisponiblesAhora),
+    statCard('Colchón de días', `${d.diasColchon} / ${d.diasColchonObjetivo}`, estadoClase),
+  ].join('');
+
+  if (!d.cola || d.cola.length === 0) {
+    colaEl.innerHTML = '<div class="empty">No hay videos en cola. Pulsa "Programar videos nuevos" para encolar los que agregaste a Drive.</div>';
+  } else {
+    colaEl.innerHTML = d.cola.map(item => `
+      <div class="row">
+        <div>
+          <div>${item.titulo || item.filename}</div>
+          <div class="meta">${item.tipo} · ${item.fechaLocal}</div>
+        </div>
+        <span class="badge">programado</span>
+      </div>`).join('');
+  }
+
+  if (!d.ultimosPublicados || d.ultimosPublicados.length === 0) {
+    ultimosEl.innerHTML = '<div class="empty">Todavía no hay publicaciones registradas.</div>';
+  } else {
+    ultimosEl.innerHTML = d.ultimosPublicados.map(item => `
+      <div class="row">
+        <div>
+          <div>${item.titulo || item.filename}</div>
+          <div class="meta">${item.fechaLocal}</div>
+        </div>
+        ${item.url ? `<a class="link" href="${item.url}" target="_blank">Ver en YouTube ↗</a>` : ''}
+      </div>`).join('');
+  }
+
+  const tiposEntries = Object.entries(d.distribucionTipos || {});
+  tiposEl.innerHTML = tiposEntries.length
+    ? tiposEntries.map(([tipo, n]) => `<div class="chip"><b>${n}</b> ${tipo}</div>`).join('')
+    : '<div class="empty">Sin datos.</div>';
+}
+
+btnPlay.addEventListener('click', async () => {
+  btnPlay.disabled = true;
+  const original = btnPlay.innerHTML;
+  btnPlay.innerHTML = '<span class="spin"></span> Encolando...';
+  try {
+    const resp = await fetch(URL_PLAY, { method: 'POST' });
+    const d = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(d.error || ('HTTP ' + resp.status));
+    toast(d.mensaje || 'Procesando en segundo plano. El panel se actualizará solo.');
+    setTimeout(cargarDatos, 4000);
+    setTimeout(cargarDatos, 15000);
+  } catch (e) {
+    toast('Error al programar: ' + e.message, 5000);
+  } finally {
+    setTimeout(() => { btnPlay.disabled = false; btnPlay.innerHTML = original; }, 2000);
+  }
+});
+
+btnRefresh.addEventListener('click', cargarDatos);
+
+cargarDatos();
+setInterval(cargarDatos, 60000); // auto-refresh cada minuto
+</script>
+</body>
+</html>
