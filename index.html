@@ -131,6 +131,7 @@ button{font:inherit}
 <script>
 (()=>{
   const CONFIG={
+    // IMPORTANTE: usa exactamente el mismo dominio ngrok que funciona con "Llenar cola".
     DATA_URL:"https://caroyln-squeakier-syreeta.ngrok-free.dev/webhook/calma-suave-data",
     PLAY_URL:"https://caroyln-squeakier-syreeta.ngrok-free.dev/webhook/calma-suave-play",
     TOKEN:"calma-suave-2026",
@@ -197,23 +198,18 @@ button{font:inherit}
     try{
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),15000);
-      const res=await fetch(endpoint(CONFIG.DATA_URL),{
-        method:"GET",
-        mode:"cors",
-        cache:"no-store",
-        credentials:"omit",
-        headers:{"Accept":"application/json"},
-        signal:controller.signal
-      });
+      const url=endpoint(CONFIG.DATA_URL);
+      const res=await fetch(url,{method:"GET",cache:"no-store",headers:{"Accept":"application/json"},signal:controller.signal});
       clearTimeout(timeout);
       const raw=await res.text();
       let data; try{data=JSON.parse(raw)}catch{throw new Error("El Webhook no devolvió JSON válido: "+raw.slice(0,120))}
-      if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
+      if(!res.ok)throw new Error(data.error||`HTTP ${res.status} · ${res.statusText}`);
       if(data.error)throw new Error(data.error);
       render(data); setStatus(true,"EN VIVO");
     }catch(err){
-      console.error(err); setStatus(false,"ERROR DE CONEXIÓN");
-      $("systemMessage").textContent=(err.name==="AbortError"?"Tiempo de espera agotado al contactar n8n.":err.message)+" · Verifica que ngrok esté online y que el workflow esté activo.";
+      console.error("Calma Suave DATA error:",err); setStatus(false,"ERROR DE CONEXIÓN");
+      const detalle=err.name==="AbortError"?"El webhook tardó más de 15 s en responder.":err.message;
+      $("systemMessage").textContent=detalle+" · URL: "+CONFIG.DATA_URL;
       $("systemPanel").classList.add("error");
     }
   }
@@ -222,16 +218,7 @@ button{font:inherit}
     const btn=$("playBtn"), old=btn.textContent;
     btn.disabled=true; btn.textContent="ENVIANDO…";
     try{
-      const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),15000);
-      const res=await fetch(endpoint(CONFIG.PLAY_URL),{
-        method:"POST",
-        mode:"cors",
-        cache:"no-store",
-        credentials:"omit",
-        signal:controller.signal
-      });
-      clearTimeout(timeout);
+      const res=await fetch(endpoint(CONFIG.PLAY_URL),{method:"POST"});
       const raw=await res.text();
       let data={}; try{data=JSON.parse(raw)}catch{}
       if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
@@ -240,7 +227,7 @@ button{font:inherit}
       setTimeout(load,3500);
     }catch(err){
       console.error(err);
-      $("systemMessage").textContent="No se pudo iniciar la cola: "+(err.name==="AbortError"?"tiempo de espera agotado":err.message);
+      $("systemMessage").textContent="No se pudo iniciar la cola: "+err.message;
       $("systemPanel").classList.add("error");
       btn.textContent="ERROR AL INICIAR";
     }finally{setTimeout(()=>{btn.disabled=false;btn.textContent=old},3000)}
