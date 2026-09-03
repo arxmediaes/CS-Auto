@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calma Suave · Panel de Control</title>
+<style>
+  :root{
+    --bg1:#080015; --bg2:#12002b; --card:#160a2e; --card2:#1c0f38;
+    --accent:#b829ff; --accent2:#00d4ff; --ok:#2dd67a; --warn:#ffb020; --bad:#ff4d6d;
+    --text:#f1eaff; --muted:#a99bc9;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font-family:'Segoe UI',system-ui,sans-serif; color:var(--text);
+    background:radial-gradient(circle at 20% 0%, #23104a 0%, var(--bg1) 55%);
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px}
+  h1{font-size:26px;margin:0;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  button{
+    cursor:pointer;border:none;border-radius:12px;padding:14px 22px;font-size:15px;font-weight:600;
+    display:flex;align-items:center;gap:8px;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  button:active{transform:scale(.97)}
+  #btnPlay{background:linear-gradient(135deg,var(--accent),#7b2fff);color:#fff;box-shadow:0 6px 20px rgba(184,41,255,.35)}
+  #btnPlay:hover{box-shadow:0 8px 26px rgba(184,41,255,.5)}
+  #btnPlay:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+  #btnRefresh{background:var(--card2);color:var(--text);border:1px solid #3a2461}
+  #btnRefresh:hover{border-color:var(--accent2)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:24px}
+  .stat{background:var(--card);border:1px solid #2a1650;border-radius:16px;padding:18px 20px}
+  .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .stat .value{font-size:28px;font-weight:700;margin-top:6px}
+  .stat.ok{border-color:rgba(45,214,122,.4)} .stat.ok .value{color:var(--ok)}
+  .stat.warn{border-color:rgba(255,176,32,.4)} .stat.warn .value{color:var(--warn)}
+  .stat.bad{border-color:rgba(255,77,109,.4)} .stat.bad .value{color:var(--bad)}
+
+  .panel{background:var(--card);border:1px solid #2a1650;border-radius:18px;padding:22px;margin-bottom:20px}
+  .panel h2{margin:0 0 14px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #241442}
+  .row:last-child{border-bottom:none}
+  .row .meta{color:var(--muted);font-size:12px;margin-top:2px}
+  .badge{font-size:11px;padding:3px 10px;border-radius:20px;background:#241442;color:var(--accent2);white-space:nowrap}
+  a.link{color:var(--accent2);text-decoration:none;font-size:13px}
+  a.link:hover{text-decoration:underline}
+  .empty{color:var(--muted);font-size:13px;padding:10px 0}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--card2);border:1px solid var(--accent);color:var(--text);
+    padding:12px 20px;border-radius:12px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);
+    opacity:0;pointer-events:none;transition:opacity .25s ease, bottom .25s ease;
+  }
+  .toast.show{opacity:1;bottom:34px}
+  .bar{height:8px;border-radius:6px;background:#241442;overflow:hidden;margin-top:8px}
+  .bar > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{background:#241442;border-radius:20px;padding:6px 12px;font-size:12px;color:var(--muted)}
+  .chip b{color:var(--text)}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px}
+  .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin 0.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🌙 Calma Suave</h1>
+      <div class="sub">Panel de control · publicación automática en YouTube</div>
+    </div>
+    <div class="actions">
+      <button id="btnRefresh">🔄 Actualizar</button>
+      <button id="btnPlay">▶ Programar videos nuevos</button>
+    </div>
+  </header>
+
+  <div class="grid" id="stats"></div>
+
+  <div class="panel">
+    <h2>📅 Próximos días</h2>
+    <div id="cola"></div>
+  </div>
+
+  <div class="panel">
+    <h2>✅ Últimos publicados</h2>
+    <div id="ultimos"></div>
+  </div>
+
+  <div class="panel">
+    <h2>🎧 Biblioteca por tipo de sonido</h2>
+    <div class="chip-row" id="tipos"></div>
+  </div>
+
+  <footer>Última actualización: <span id="ultimaActualizacion">—</span></footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN — edita estas dos líneas con tus datos
+// ============================================================
+const N8N_BASE_URL = 'https://TU-DOMINIO-N8N.com'; // sin barra al final
+const TOKEN = 'calma-suave-2026'; // debe coincidir con TOKEN_ESPERADO en los nodos "Verificar Token" del workflow
+
+const URL_DATA = `${N8N_BASE_URL}/webhook/calma-suave-data?token=${encodeURIComponent(TOKEN)}`;
+const URL_PLAY = `${N8N_BASE_URL}/webhook/calma-suave-play?token=${encodeURIComponent(TOKEN)}`;
+
+const $ = (sel) => document.querySelector(sel);
+const statsEl = $('#stats'), colaEl = $('#cola'), ultimosEl = $('#ultimos'), tiposEl = $('#tipos');
+const btnPlay = $('#btnPlay'), btnRefresh = $('#btnRefresh'), toastEl = $('#toast');
+
+function toast(msg, ms = 3500) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+
+function statCard(label, value, cls) {
+  return `<div class="stat ${cls || ''}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+}
+
+async function cargarDatos() {
+  try {
+    const resp = await fetch(URL_DATA);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const d = await resp.json();
+    render(d);
+    $('#ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-CL');
+  } catch (e) {
+    toast('No se pudo conectar con n8n: ' + e.message, 5000);
+  }
+}
+
+function render(d) {
+  const estadoClase = d.estadoColchon === 'ok' ? 'ok' : (d.estadoColchon === 'bajo' ? 'warn' : 'bad');
+  const estadoTexto = d.estadoColchon === 'ok' ? 'Saludable' : (d.estadoColchon === 'bajo' ? 'Bajo' : 'Vacío');
+
+  statsEl.innerHTML = [
+    statCard('Videos en Drive', d.totalVideosEnDrive),
+    statCard('Publicados hasta ahora', d.totalPublicados),
+    statCard('Disponibles para programar', d.videosDisponiblesAhora),
+    statCard('Colchón de días', `${d.diasColchon} / ${d.diasColchonObjetivo}`, estadoClase),
+  ].join('');
+
+  if (!d.cola || d.cola.length === 0) {
+    colaEl.innerHTML = '<div class="empty">No hay videos en cola. Pulsa "Programar videos nuevos" para encolar los que agregaste a Drive.</div>';
+  } else {
+    colaEl.innerHTML = d.cola.map(item => `
+      <div class="row">
+        <div>
+          <div>${item.titulo || item.filename}</div>
+          <div class="meta">${item.tipo} · ${item.fechaLocal}</div>
+        </div>
+        <span class="badge">programado</span>
+      </div>`).join('');
+  }
+
+  if (!d.ultimosPublicados || d.ultimosPublicados.length === 0) {
+    ultimosEl.innerHTML = '<div class="empty">Todavía no hay publicaciones registradas.</div>';
+  } else {
+    ultimosEl.innerHTML = d.ultimosPublicados.map(item => `
+      <div class="row">
+        <div>
+          <div>${item.titulo || item.filename}</div>
+          <div class="meta">${item.fechaLocal}</div>
+        </div>
+        ${item.url ? `<a class="link" href="${item.url}" target="_blank">Ver en YouTube ↗</a>` : ''}
+      </div>`).join('');
+  }
+
+  const tiposEntries = Object.entries(d.distribucionTipos || {});
+  tiposEl.innerHTML = tiposEntries.length
+    ? tiposEntries.map(([tipo, n]) => `<div class="chip"><b>${n}</b> ${tipo}</div>`).join('')
+    : '<div class="empty">Sin datos.</div>';
+}
+
+btnPlay.addEventListener('click', async () => {
+  btnPlay.disabled = true;
+  const original = btnPlay.innerHTML;
+  btnPlay.innerHTML = '<span class="spin"></span> Encolando...';
+  try {
+    const resp = await fetch(URL_PLAY, { method: 'POST' });
+    const d = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(d.error || ('HTTP ' + resp.status));
+    toast(d.mensaje || 'Procesando en segundo plano. El panel se actualizará solo.');
+    setTimeout(cargarDatos, 4000);
+    setTimeout(cargarDatos, 15000);
+  } catch (e) {
+    toast('Error al programar: ' + e.message, 5000);
+  } finally {
+    setTimeout(() => { btnPlay.disabled = false; btnPlay.innerHTML = original; }, 2000);
+  }
+});
+
+btnRefresh.addEventListener('click', cargarDatos);
+
+cargarDatos();
+setInterval(cargarDatos, 60000); // auto-refresh cada minuto
+</script>
+</body>
+</html>
