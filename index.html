@@ -200,7 +200,7 @@ button{font:inherit}
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),15000);
       const url=endpoint(CONFIG.DATA_URL)+"&t="+Date.now();
-      const res=await window.fetch(url,{method:"GET",cache:"no-store",mode:"cors",signal:controller.signal});
+      const res=await window.fetch(url,{method:"POST",cache:"no-store",mode:"cors",signal:controller.signal});
       clearTimeout(timeout);
       const raw=await res.text();
       let data; try{data=JSON.parse(raw)}catch{throw new Error("El Webhook no devolvió JSON válido: "+raw.slice(0,120))}
@@ -237,7 +237,6 @@ button{font:inherit}
   }
 
   window.calmaSuaveRefresh=()=>{ void load(); };
-  $("refreshBtn").addEventListener("click",()=>window.calmaSuaveRefresh());
   $("playBtn").addEventListener("click",fillQueue);
   load();
   setInterval(load,CONFIG.REFRESH_MS);
