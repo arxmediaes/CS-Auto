@@ -242,5 +242,60 @@ button{font:inherit}
   setInterval(load,CONFIG.REFRESH_MS);
 })();
 </script>
+  <!-- ===== INICIO: Panel Optimizador IA (pegar antes de </body>) ===== -->
+<section class="grid" id="optimizerSection" style="margin-top:18px">
+  <article class="panel" style="grid-column:1 / -1">
+    <div class="panel-head">
+      <div>
+        <div class="panel-label">IA Quality Check</div>
+        <h3>Optimizador de portadas y descripciones</h3>
+        <div class="panel-sub">Revisa los videos programados y sugiere mejoras antes de que salgan al aire.</div>
+      </div>
+      <span class="badge" id="optimizerBadge">EN PRUEBA</span>
+    </div>
+    <div class="empty" id="optimizerStatus">Sin ejecutar todavía.</div>
+    <div style="margin-top:14px">
+      <button type="button" class="btn primary" id="optimizerBtn">▶ Revisar programados ahora</button>
+    </div>
+  </article>
+</section>
+<!-- ===== FIN: Panel Optimizador IA ===== -->
+
+<script>
+(()=>{
+  // Config independiente, no toca la del panel principal.
+  const OPT_CONFIG = {
+    RUN_URL: "https://caroyln-squeakier-syreeta.ngrok-free.dev/webhook/calma-suave-optimizer-run",
+    TOKEN: "calma-suave-2026"
+  };
+
+  const endpoint = (url) => url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(OPT_CONFIG.TOKEN);
+  const btn = document.getElementById("optimizerBtn");
+  const status = document.getElementById("optimizerStatus");
+
+  async function runOptimizer(){
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "ENVIANDO…";
+    status.textContent = "Disparando revisión de videos programados…";
+    try{
+      const res = await fetch(endpoint(OPT_CONFIG.RUN_URL), { method: "POST" });
+      const raw = await res.text();
+      let data = {}; try{ data = JSON.parse(raw) }catch{}
+      if(!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+      btn.textContent = "✓ INICIADO";
+      status.textContent = data.mensaje || "Optimización iniciada.";
+    }catch(err){
+      console.error("Optimizador error:", err);
+      btn.textContent = "ERROR";
+      status.textContent = "No se pudo iniciar: " + err.message;
+    }finally{
+      setTimeout(()=>{ btn.disabled = false; btn.textContent = old; }, 3000);
+    }
+  }
+
+  btn.addEventListener("click", runOptimizer);
+})();
+</script>
 </body>
 </html>
